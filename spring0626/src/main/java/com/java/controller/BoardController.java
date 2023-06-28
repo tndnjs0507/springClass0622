@@ -1,6 +1,7 @@
 package com.java.controller;
 
 import java.io.File;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
@@ -23,6 +24,23 @@ public class BoardController {
 	
 	@Autowired
 	BoardService boardService;
+	
+	@RequestMapping("/board/boardList")
+	public String boardList(@RequestParam(defaultValue = "1")int page, 
+			String category,String s_word,Model model) {
+		System.out.println("BoardController boardList category : "+category);
+		//게시글 전체가져오기
+		HashMap<String,Object> map = boardService.selectAll(page,category,s_word);
+		model.addAttribute("list",map.get("list"));
+		model.addAttribute("page",map.get("page"));
+		model.addAttribute("listCount",map.get("listCount"));
+		model.addAttribute("startPage",map.get("startPage"));
+		model.addAttribute("endPage",map.get("endPage"));
+		model.addAttribute("maxPage",map.get("maxPage"));
+		model.addAttribute("category",map.get("category"));
+		model.addAttribute("s_word",map.get("s_word"));
+		return "board/boardList";
+	}//boardList
 	
 	@PostMapping("/board/boardReply") //boardReply 저장
 	public String doboardReply(BoardDto bdto,@RequestPart MultipartFile file,
@@ -50,8 +68,9 @@ public class BoardController {
 	@GetMapping("/board/boardReply") //boardReply view
 	public String boardReply(int bno,Model model) {
 		System.out.println("boardReply bno : "+bno);
-		BoardDto bdto = boardService.selectOne(bno); //1개 가져오기
-		model.addAttribute("bdto",bdto);
+
+		HashMap<String, Object> map = boardService.selectOne(bno);
+		model.addAttribute("bdto",map.get("bdto"));
 		return "board/boardReply";
 	}//답변달기 view
 	
@@ -61,10 +80,23 @@ public class BoardController {
 		boardService.deleteOne(bno);
 		return "redirect:boardList";
 	}//boardDelete
+	@GetMapping("/board/boardUpdate") //boardUpdate view
+	public String boardUpdate(int bno,
+			int page,String category,String s_word, Model model) {
+		System.out.println("boardUpdate bno : "+bno);
+		HashMap<String, Object> map = boardService.selectOne(bno);
+		model.addAttribute("bdto",map.get("bdto"));
+		
+		model.addAttribute("category",category);
+		model.addAttribute("s_word",s_word);
+		model.addAttribute("page",page);
+		
+		return "board/boardUpdate";
+	}
 	
 	@PostMapping("/board/boardUpdate") //boardUpdate 저장
 	public String doBoardUpdate(BoardDto bdto,@RequestPart MultipartFile file,
-			Model model) throws Exception {
+			int page,String category,String s_word, Model model) throws Exception {
 		
 		//게시글 1개 수정
 		System.out.println("doBoardUpdate bdto : "+bdto.getBno());
@@ -85,37 +117,27 @@ public class BoardController {
 				bdto.setBfile(fileName);
 			}
 			boardService.updateOne(bdto);
-			return "redirect:boardList";
+			s_word = URLEncoder.encode(s_word,"utf-8");
+			//return "redirect:boardList";
+			return "redirect:boardList?page="+page+"&category="+category+"&s_word="+s_word;
 		}
 	
-	@GetMapping("/board/boardUpdate") //boardUpdate view
-	public String boardUpdate(int bno,Model model) {
-		System.out.println("boardUpdate bno : "+bno);
-		BoardDto bdto = boardService.selectOne(bno);
-		model.addAttribute("bdto",bdto);
-		return "board/boardUpdate";
-	}
 	
 	
-	@RequestMapping("/board/boardList")
-	public String boardList(@RequestParam(defaultValue = "1")int page, Model model) {
-		//게시글 전체가져오기
-		HashMap<String,Object> map = boardService.selectAll(page);
-		model.addAttribute("list",map.get("list"));
-		model.addAttribute("page",map.get("page"));
-		model.addAttribute("listCount",map.get("listCount"));
-		model.addAttribute("startPage",map.get("startPage"));
-		model.addAttribute("endPage",map.get("endPage"));
-		model.addAttribute("maxPage",map.get("maxPage"));
-		return "board/boardList";
-	}//boardList
+	
 	
 	@RequestMapping("/board/boardView")
-	public String boardView(@RequestParam(defaultValue = "1") int bno,Model model) {
+	public String boardView(@RequestParam(defaultValue = "1") int bno,
+		   int page,String category,String s_word, Model model) {
 		System.out.println("boardView bno : "+bno);
 		//게시글 1개 가져오기
-		BoardDto bdto = boardService.selectOne(bno);
-		model.addAttribute("bdto",bdto);
+		HashMap<String, Object> map = boardService.selectOne(bno);
+		model.addAttribute("bdto",map.get("bdto"));
+		model.addAttribute("prevDto",map.get("prevDto"));
+		model.addAttribute("nextDto",map.get("nextDto"));
+		model.addAttribute("category",category);
+		model.addAttribute("s_word",s_word);
+		model.addAttribute("page",page);
 		return "board/boardView";
 	}
 	@GetMapping("/board/boardWrite")
