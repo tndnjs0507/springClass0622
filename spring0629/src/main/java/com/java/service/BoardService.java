@@ -15,6 +15,7 @@ public interface BoardService {
 	
 	//하단댓글 전체가져오기
 	ArrayList<CommentDto> selectComAll(int bno);
+	
 	//하단댓글 저장
 	CommentDto commentInsert(CommentDto comDto);
 

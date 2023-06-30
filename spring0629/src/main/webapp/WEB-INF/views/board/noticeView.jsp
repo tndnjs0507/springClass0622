@@ -12,6 +12,8 @@
 <meta name="keywords" content="JARDIN SHOP" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scaleable=no" />
 <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+<!-- 날짜 포맷함수 -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
 <link rel="stylesheet" type="text/css" href="../css/reset.css?v=Y" />
 <link rel="stylesheet" type="text/css" href="../css/layout.css?v=Y" />
 <link rel="stylesheet" type="text/css" href="../css/content.css?v=Y" />
@@ -49,8 +51,14 @@
 			</div>
 			<div id="snb">
 				<ul>
-					<li><a href="#">LOGIN</a></li>
+					<c:if test="${sessionId==null}">
+					<li><a href="/member/login">LOGIN</a></li>
 					<li><a href="#">JOIN</a></li>
+					</c:if>
+					<c:if test="${sessionId!=null}">
+					<li><a href="#">${sessionName}님</a></li>
+					<li><a onclick="logoutBtn()" style="cursor: pointer;">LOGOUT</a></li>
+					</c:if>
 					<li><a href="#">MY PAGE</a></li>
 					<li><a href="#">CART</a></li>
 				</ul>
@@ -211,20 +219,47 @@
 					<!-- //이전다음글 -->
 					<script>
 					function commentBtn(){
-						alert($(".replyType").val());
-						alert($(".replynum").val());
+						if("${sessionId}"==""){
+							alert("로그인을 하셔야 댓글입력이 가능합니다.");
+							location.href="/member/login";
+							return false;
+						}
+						
+						if($(".replyType").val().length<3){
+							alert("2글자 이상 입력하셔야 등록가능합니다.");
+							return false;
+						}
+						alert("댓글 저장합니다.");
 						
 						//ajax구문
 						$.ajax({
 							url:"/board/commentInsert",
 							type:"post",
-							data:{"id":"aaa", //${sessionId}를 사용함
+							data:{"id":"${sessionId}", //${sessionId}를 사용함
 								"bno":"${bdto.bno}",
 								"ccontent":$(".replyType").val(),
 								  "cpw":$(".replynum").val()
 							},
 							success:function(data){
-								alert("성공");
+								var dataHtml="";
+								alert("댓글 저장 성공");
+								//하단댓글 1개 가져오기
+								console.log(data);
+								//하단에 댓글추가코드
+								dataHtml += "<ul id='"+data.cno+"'>";
+								dataHtml += "<li class='name'>"+data.id+"<span>&nbsp&nbsp["+moment(data.cdate).format("YYYY-MM-DD HH:mm:ss")+"]</span></li>";
+								dataHtml += "<li class='txt'>"+data.ccontent+"</li>";
+								dataHtml += "<li class='btn'>";
+								dataHtml += "<a href='#' class='rebtn'>수정</a>&nbsp";
+								dataHtml += "<a href='#' class='rebtn'>삭제</a>";
+								dataHtml += "</li>";
+								dataHtml += "</ul>";
+								
+								$(".replyBox").prepend(dataHtml); //prepend(위),append(아래),html(모두삭제후 추가)
+								
+								//글자삭제
+								$(".replyType").val("");
+								$(".replynum").val("");
 							},
 							error:function(){
 								alert("실패");
@@ -249,7 +284,7 @@
 
 					<div class="replyBox">
 						<c:forEach var="comDto" items="${comList}">
-						<ul>
+						<ul id="${comDto.cno}">
 							<li class="name">${comDto.id} <span>[${comDto.cdate}]</span></li>
 							<li class="txt">${comDto.ccontent}</li>
 							<li class="btn">
